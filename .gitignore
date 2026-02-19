@@ -1,0 +1,34 @@
+## Arquivos de compilação
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.user
+*.suo
+*.cache
+*.ilk
+*.log
+*.tmp
+
+## Arquivos do Visual Studio
+.vs/
+*.csproj.user
+*.csproj.user
+app.config
+*.pidb
+*.userprefs
+
+## Arquivos do banco de dados
+*.mdf
+*.ldf
+*.sdf
+*.db
+
+## Pastas de publicação
+publish/
+PublishProfiles/
+
+## Arquivos de configuração local
+appsettings.Development.json
+*.local.json

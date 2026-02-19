@@ -1,0 +1,445 @@
+﻿<Window x:Class="NextBala.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:NextBala.ViewModels"
+        Title="NextBala - Sistema de Gestão de Pedidos"
+        Height="750"
+        Width="1300"
+        Background="#EEF2F7"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/logo.ico">
+
+        <!-- DataContext -->
+        <Window.DataContext>
+                <vm:PedidoViewModel/>
+        </Window.DataContext>
+
+        <!-- Recursos -->
+        <Window.Resources>
+
+                <!-- Sombra -->
+                <DropShadowEffect x:Key="Shadow"
+                                  BlurRadius="20"
+                                  ShadowDepth="2"
+                                  Opacity="0.2"/>
+
+                <!-- Botão padrão com cantos arredondados -->
+                <Style TargetType="Button">
+                        <Setter Property="Foreground"
+                                Value="White"/>
+                        <Setter Property="Padding"
+                                Value="18,10"/>
+                        <Setter Property="FontWeight"
+                                Value="Bold"/>
+                        <Setter Property="Cursor"
+                                Value="Hand"/>
+                        <Setter Property="BorderThickness"
+                                Value="0"/>
+                        <Setter Property="MinWidth"
+                                Value="140"/>
+                        <Setter Property="Height"
+                                Value="40"/>
+                        <Setter Property="Template">
+                                <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="12"
+                                                        BorderThickness="0"
+                                                        Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"/>
+                                                </Border>
+                                        </ControlTemplate>
+                                </Setter.Value>
+                        </Setter>
+                </Style>
+
+                <!-- TextBox moderno com cantos arredondados -->
+                <Style x:Key="InputBox"
+                       TargetType="TextBox">
+                        <Setter Property="Background"
+                                Value="#F4F7FB"/>
+                        <Setter Property="BorderBrush"
+                                Value="#D6DFEA"/>
+                        <Setter Property="BorderThickness"
+                                Value="1"/>
+                        <Setter Property="Padding"
+                                Value="8,6"/>
+                        <Setter Property="FontSize"
+                                Value="14"/>
+                        <Setter Property="Height"
+                                Value="38"/>
+                        <Setter Property="VerticalContentAlignment"
+                                Value="Center"/>
+                        <Setter Property="Template">
+                                <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="12">
+                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="6,0"/>
+                                                </Border>
+                                        </ControlTemplate>
+                                </Setter.Value>
+                        </Setter>
+                </Style>
+
+                <!-- Label simples -->
+                <Style x:Key="FieldLabel"
+                       TargetType="TextBlock">
+                        <Setter Property="FontSize"
+                                Value="12"/>
+                        <Setter Property="Foreground"
+                                Value="#6B7A90"/>
+                        <Setter Property="Margin"
+                                Value="2,5,0,2"/>
+                </Style>
+
+                <!-- Estilo para DataGrid com bordas arredondadas -->
+                <Style x:Key="RoundedDataGrid"
+                       TargetType="DataGrid">
+                        <Setter Property="BorderThickness"
+                                Value="1"/>
+                        <Setter Property="BorderBrush"
+                                Value="#D6DFEA"/>
+                        <Setter Property="Background"
+                                Value="White"/>
+                        <Setter Property="RowBackground"
+                                Value="White"/>
+                        <Setter Property="AlternatingRowBackground"
+                                Value="#F5F7FA"/>
+                        <Setter Property="HeadersVisibility"
+                                Value="Column"/>
+                        <Setter Property="GridLinesVisibility"
+                                Value="None"/>
+                        <Setter Property="HorizontalGridLinesBrush"
+                                Value="Transparent"/>
+                        <Setter Property="VerticalGridLinesBrush"
+                                Value="Transparent"/>
+                        <Setter Property="CellStyle">
+                                <Setter.Value>
+                                        <Style TargetType="DataGridCell">
+                                                <Setter Property="BorderThickness"
+                                                        Value="0"/>
+                                                <Setter Property="Padding"
+                                                        Value="5"/>
+                                                <Setter Property="FocusVisualStyle"
+                                                        Value="{x:Null}"/>
+                                        </Style>
+                                </Setter.Value>
+                        </Setter>
+                        <Setter Property="ColumnHeaderStyle">
+                                <Setter.Value>
+                                        <Style TargetType="DataGridColumnHeader">
+                                                <Setter Property="Background"
+                                                        Value="#F0F3F7"/>
+                                                <Setter Property="Foreground"
+                                                        Value="#2C3E50"/>
+                                                <Setter Property="FontWeight"
+                                                        Value="SemiBold"/>
+                                                <Setter Property="BorderBrush"
+                                                        Value="#D6DFEA"/>
+                                                <Setter Property="BorderThickness"
+                                                        Value="0,0,1,1"/>
+                                                <Setter Property="Padding"
+                                                        Value="8"/>
+                                        </Style>
+                                </Setter.Value>
+                        </Setter>
+                </Style>
+
+        </Window.Resources>
+
+        <!-- Layout principal com Grid -->
+        <Grid>
+                <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Header -->
+                        <RowDefinition Height="*"/>
+                        <!-- Conteúdo com scroll -->
+                </Grid.RowDefinitions>
+
+                <!-- Header com Logo -->
+                <Border Grid.Row="0"
+                        Height="80"
+                        Background="#2C3E50"
+                        CornerRadius="12"
+                        Margin="10,10,10,5"
+                        Padding="15">
+
+                        <Grid>
+                                <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Logo -->
+                                <Border Grid.Column="0"
+                                        Width="50"
+                                        Height="50"
+                                        Background="White"
+                                        CornerRadius="25"
+                                        HorizontalAlignment="Left"
+                                        Margin="0,0,15,0">
+                                        <Grid>
+                                                <TextBlock Text="NB"
+                                                           FontSize="24"
+                                                           FontWeight="Bold"
+                                                           Foreground="#2C3E50"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                                <Ellipse Width="8"
+                                                         Height="8"
+                                                         Fill="#3498DB"
+                                                         HorizontalAlignment="Right"
+                                                         VerticalAlignment="Bottom"
+                                                         Margin="0,0,8,8"/>
+                                        </Grid>
+                                </Border>
+
+                                <!-- Títulos centralizados -->
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="NextBala"
+                                                   FontSize="24"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Sistema de Gestão de Pedidos"
+                                                   FontSize="14"
+                                                   FontWeight="Normal"
+                                                   Foreground="#BDC3C7"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <!-- Data e Hora -->
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding DataAtual, FallbackValue='11/03/2025 14:30'}"
+                                           Foreground="#BDC3C7"
+                                           VerticalAlignment="Center"
+                                           FontSize="12"
+                                           Margin="10,0,0,0"/>
+                        </Grid>
+                </Border>
+
+                <!-- Conteúdo principal com ScrollViewer -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+
+                        <Grid Margin="10,0,10,10">
+                                <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- FORMULÁRIO -->
+                                <Border Grid.Column="0"
+                                        Background="White"
+                                        CornerRadius="12"
+                                        Padding="20"
+                                        Margin="3"
+                                        Effect="{StaticResource Shadow}">
+
+                                        <StackPanel>
+
+                                                <TextBlock Text="Novo Pedido"
+                                                           FontSize="20"
+                                                           FontWeight="Bold"
+                                                           Margin="0,0,0,10"/>
+
+                                                <TextBlock Text="Cliente"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding ClienteNome}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Telefone"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding ClienteTelefone}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Marca"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Marca}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Modelo"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Modelo}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Defeito"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Defeito}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Técnico"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Tecnico}"
+                                                         Style="{StaticResource InputBox}"/>
+
+                                                <TextBlock Text="Preço"
+                                                           Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Preco}"
+                                                         Style="{StaticResource InputBox}"
+                                                         Margin="0,0,0,10"/>
+
+                                                <!-- Botões -->
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            Margin="0,5,0,5">
+
+                                                        <Button Content="Adicionar Item"
+                                                                Command="{Binding AdicionarItemCommand}"
+                                                                Background="#2980B9"
+                                                                Margin="0,0,5,0"
+                                                                Height="38"
+                                                                Width="130"/>
+
+                                                        <Button Content="Salvar Pedido"
+                                                                Command="{Binding SalvarPedidoCommand}"
+                                                                Background="#27AE60"
+                                                                Height="38"
+                                                                Width="130"/>
+                                                </StackPanel>
+
+                                        </StackPanel>
+                                </Border>
+
+                                <!-- ITENS -->
+                                <Border Grid.Column="1"
+                                        Background="White"
+                                        CornerRadius="12"
+                                        Padding="15"
+                                        Margin="3"
+                                        Effect="{StaticResource Shadow}">
+
+                                        <StackPanel>
+
+                                                <TextBlock Text="Itens do Pedido"
+                                                           FontSize="20"
+                                                           FontWeight="Bold"
+                                                           Margin="0,0,0,8"/>
+
+                                                <!-- Border para efeito arredondado no DataGrid -->
+                                                <Border BorderBrush="#D6DFEA"
+                                                        BorderThickness="1"
+                                                        CornerRadius="10"
+                                                        Background="White"
+                                                        Margin="0,0,0,8"
+                                                        Padding="1">
+                                                        <DataGrid ItemsSource="{Binding Itens}"
+                                                                  AutoGenerateColumns="False"
+                                                                  CanUserAddRows="False"
+                                                                  Height="380"
+                                                                  Style="{StaticResource RoundedDataGrid}"
+                                                                  BorderThickness="0"
+                                                                  Background="White">
+                                                                <DataGrid.Columns>
+                                                                        <DataGridTextColumn Header="Marca"
+                                                                                            Binding="{Binding Marca}"
+                                                                                            Width="*"/>
+                                                                        <DataGridTextColumn Header="Modelo"
+                                                                                            Binding="{Binding Modelo}"
+                                                                                            Width="*"/>
+                                                                        <DataGridTextColumn Header="Defeito"
+                                                                                            Binding="{Binding Defeito}"
+                                                                                            Width="*"/>
+                                                                        <DataGridTextColumn Header="Técnico"
+                                                                                            Binding="{Binding Tecnico}"
+                                                                                            Width="*"/>
+                                                                        <DataGridTextColumn Header="Preço"
+                                                                                            Binding="{Binding Preco, StringFormat={}{0:N2} AOA}"
+                                                                                            Width="*"/>
+                                                                </DataGrid.Columns>
+                                                        </DataGrid>
+                                                </Border>
+
+                                                <TextBlock Text="Ticket"
+                                                           FontWeight="Bold"
+                                                           Margin="0,0,0,3"/>
+
+                                                <TextBox Text="{Binding Ticket}"
+                                                         AcceptsReturn="True"
+                                                         IsReadOnly="True"
+                                                         Height="120"
+                                                         Background="#F5F7FA"
+                                                         BorderThickness="0"
+                                                         Padding="8"
+                                                         TextWrapping="Wrap">
+                                                        <TextBox.Template>
+                                                                <ControlTemplate TargetType="TextBox">
+                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                BorderThickness="0"
+                                                                                CornerRadius="10">
+                                                                                <ScrollViewer x:Name="PART_ContentHost"
+                                                                                              Margin="4"/>
+                                                                        </Border>
+                                                                </ControlTemplate>
+                                                        </TextBox.Template>
+                                                </TextBox>
+                                        </StackPanel>
+                                </Border>
+
+                                <!-- PEDIDOS -->
+                                <Border Grid.Column="2"
+                                        Background="White"
+                                        CornerRadius="12"
+                                        Padding="15"
+                                        Margin="3"
+                                        Effect="{StaticResource Shadow}">
+
+                                        <StackPanel>
+
+                                                <TextBlock Text="Pedidos Registrados"
+                                                           FontSize="20"
+                                                           FontWeight="Bold"
+                                                           Margin="0,0,0,8"/>
+
+                                                <!-- Border para efeito arredondado no DataGrid -->
+                                                <Border BorderBrush="#D6DFEA"
+                                                        BorderThickness="1"
+                                                        CornerRadius="10"
+                                                        Background="White"
+                                                        Padding="1">
+                                                        <DataGrid ItemsSource="{Binding Pedidos}"
+                                                                  AutoGenerateColumns="False"
+                                                                  CanUserAddRows="False"
+                                                                  Height="400"
+                                                                  Style="{StaticResource RoundedDataGrid}"
+                                                                  BorderThickness="0"
+                                                                  Background="White">
+                                                                <DataGrid.Columns>
+                                                                        <DataGridTextColumn Header="Nº"
+                                                                                            Binding="{Binding NumeroPedido}"
+                                                                                            Width="70"/>
+                                                                        <DataGridTextColumn Header="Cliente"
+                                                                                            Binding="{Binding Cliente.Nome}"
+                                                                                            Width="*"/>
+                                                                        <DataGridTextColumn Header="Técnicos"
+                                                                                            Binding="{Binding TecnicosConcatenados}"
+                                                                                            Width="70"/>
+                                                                        <DataGridTextColumn Header="Data"
+                                                                                            Binding="{Binding Data, StringFormat=dd/MM/yyyy}"
+                                                                                            Width="85"/>
+                                                                        <DataGridTextColumn Header="Total"
+                                                                                            Binding="{Binding Total, StringFormat={}{0:N2} AOA}"
+                                                                                            Width="90"/>
+                                                                </DataGrid.Columns>
+                                                        </DataGrid>
+                                                </Border>
+
+                                        </StackPanel>
+                                </Border>
+
+                        </Grid>
+                </ScrollViewer>
+        </Grid>
+</Window>
