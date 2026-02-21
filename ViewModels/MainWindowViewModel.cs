@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace NextBala.ViewModels
 {
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
         private object _currentView;
         private string _dataAtual;
@@ -25,7 +25,7 @@ namespace NextBala.ViewModels
         public RelayCommand NavigateToDashboardCommand { get; set; }
         public RelayCommand NavigateToPedidosCommand { get; set; }
 
-        public MainViewModel()
+        public MainWindowViewModel()
         {
             // Inicializa com Dashboard
             CurrentView = new DashboardViewModel();

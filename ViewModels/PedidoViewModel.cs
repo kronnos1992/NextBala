@@ -484,6 +484,9 @@ namespace NextBala.ViewModels
 
             try
             {
+                // Converter cliente para Pascal Case
+                ClienteNome = ToPascalCase(ClienteNome.Trim());
+
                 Cliente clienteExistente = null;
 
                 if (!string.IsNullOrWhiteSpace(ClienteTelefone))
@@ -513,6 +516,15 @@ namespace NextBala.ViewModels
                     _service.AdicionarCliente(novoCliente);
                     PedidoAtual.Cliente = novoCliente;
                     PedidoAtual.ClienteId = novoCliente.Id;
+                }
+
+                // Converter técnico de cada item para Pascal Case
+                foreach (var item in Itens)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.Tecnico))
+                    {
+                        item.Tecnico = ToPascalCase(item.Tecnico.Trim());
+                    }
                 }
 
                 PedidoAtual.NumeroPedido = ObterProximoNumeroPedido();
@@ -547,6 +559,26 @@ namespace NextBala.ViewModels
                 MessageBox.Show($"Erro ao salvar pedido: {ex.Message}", "Erro",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private string ToPascalCase(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // Divide o texto em palavras
+            var words = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (words[i].Length > 0)
+                {
+                    // Primeira letra maiúscula, resto minúsculo
+                    words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1).ToLower();
+                }
+            }
+
+            return string.Join(" ", words);
         }
 
         private void CancelarPedido(Pedido? pedido)
@@ -606,51 +638,35 @@ namespace NextBala.ViewModels
             }
         }
 
-        private void ImprimirTicket(string ticketTexto, int copias = 1)
+        // Imprime tickets
+        private static void ImprimirTicket(string ticketTexto, int copias = 1)
         {
             try
             {
                 PrintDocument pd = new PrintDocument();
+                pd.PrinterSettings.PrinterName = "Xprinter XP-235B";
 
-                try
-                {
-                    pd.PrinterSettings.PrinterName = "Xprinter XP-235B";
-                }
-                catch
-                {
-                    // Usa impressora padrão
-                }
-
-                int largura = 280;
-                int altura = 200;
+                int largura = 280;   // ~58mm
+                int altura = 120;    // Aumentei a altura para acomodar mais informações
 
                 pd.DefaultPageSettings.PaperSize = new PaperSize("Ticket", largura, altura);
-                pd.DefaultPageSettings.Margins = new Margins(5, 5, 5, 5);
 
                 int copiaAtual = 0;
 
                 pd.PrintPage += (sender, e) =>
                 {
-                    using var fontTitulo = new System.Drawing.Font("Consolas", 10, System.Drawing.FontStyle.Bold);
-                    using var fontNormal = new System.Drawing.Font("Consolas", 9, System.Drawing.FontStyle.Regular);
+                    using var font = new System.Drawing.Font("Consolas", 9, System.Drawing.FontStyle.Bold);
 
-                    float yPos = 5;
-                    float leftMargin = 10;
-
-                    var linhas = ticketTexto.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-                    foreach (var linha in linhas)
+                    var format = new StringFormat
                     {
-                        if (linha.Contains("===") || linha.Contains("NEXTBALA") || linha.Contains("PEDIDO"))
-                        {
-                            e.Graphics.DrawString(linha, fontTitulo, Brushes.Black, leftMargin, yPos);
-                        }
-                        else
-                        {
-                            e.Graphics.DrawString(linha, fontNormal, Brushes.Black, leftMargin, yPos);
-                        }
-                        yPos += 15;
-                    }
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Near
+                    };
+
+                    var area = new RectangleF(0, 0, largura, altura);
+
+                    // Desenha o ticket
+                    e.Graphics.DrawString(ticketTexto, font, Brushes.Black, area, format);
 
                     copiaAtual++;
                     e.HasMorePages = copiaAtual < copias;
@@ -660,8 +676,8 @@ namespace NextBala.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao imprimir ticket: {ex.Message}\n\nVerifique se a impressora está configurada corretamente.",
-                    "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao imprimir ticket: {ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

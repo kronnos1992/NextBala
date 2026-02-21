@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace NextBala.ViewModels
 {
@@ -17,11 +18,16 @@ namespace NextBala.ViewModels
 
         #region CONTROLE PERFORMANCE
 
-        private bool _performanceFiltrada;
+        private bool _performanceFiltrada = true; // Valor padrão true para mostrar performance filtrada
         public bool PerformanceFiltrada
         {
             get => _performanceFiltrada;
-            set { _performanceFiltrada = value; OnPropertyChanged(); }
+            set
+            {
+                _performanceFiltrada = value;
+                OnPropertyChanged();
+                AtualizarPerformanceTecnicos(); // Atualiza quando alternar
+            }
         }
 
         #endregion
@@ -72,21 +78,43 @@ namespace NextBala.ViewModels
 
         #endregion
 
+        #region SELEÇÃO
+
+        private Pedido _pedidoSelecionado;
+        public Pedido PedidoSelecionado
+        {
+            get => _pedidoSelecionado;
+            set
+            {
+                _pedidoSelecionado = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PodeCancelar));
+                OnPropertyChanged(nameof(PodeAlterarTecnico));
+            }
+        }
+
+        public bool PodeCancelar => PedidoSelecionado?.Status == "Ativo";
+        public bool PodeAlterarTecnico => PedidoSelecionado?.Status == "Ativo";
+
+        #endregion
+
         #region FILTROS
 
-        private string _tecnicoFiltro;
+        private string _tecnicoFiltro = "Todos";
         public string TecnicoFiltro
         {
             get => _tecnicoFiltro;
             set
             {
-                _tecnicoFiltro = value;
-                OnPropertyChanged();
-                AplicarFiltros();
+                if (_tecnicoFiltro != value)
+                {
+                    _tecnicoFiltro = value;
+                    OnPropertyChanged();
+                    AplicarFiltros();
+                }
             }
         }
 
-        // DATA INICIAL TEXTO
         private string _dataTextoFiltro;
         public string DataTextoFiltro
         {
@@ -99,7 +127,6 @@ namespace NextBala.ViewModels
             }
         }
 
-        // DATA FINAL TEXTO
         private string _dataTextoFinalFiltro;
         public string DataTextoFinalFiltro
         {
@@ -112,35 +139,39 @@ namespace NextBala.ViewModels
             }
         }
 
-        // DATA INICIAL
         private DateTime? _dataFiltro;
         public DateTime? DataFiltro
         {
             get => _dataFiltro;
             set
             {
-                _dataFiltro = value;
-                OnPropertyChanged();
-                if (value.HasValue || _dataFinalFiltro.HasValue)
-                    AplicarFiltros();
-                else
-                    AtualizarTudo();
+                if (_dataFiltro != value)
+                {
+                    _dataFiltro = value;
+                    OnPropertyChanged();
+                    if (value.HasValue || _dataFinalFiltro.HasValue)
+                        AplicarFiltros();
+                    else
+                        AtualizarTudo();
+                }
             }
         }
 
-        // DATA FINAL
         private DateTime? _dataFinalFiltro;
         public DateTime? DataFinalFiltro
         {
             get => _dataFinalFiltro;
             set
             {
-                _dataFinalFiltro = value;
-                OnPropertyChanged();
-                if (value.HasValue || _dataFiltro.HasValue)
-                    AplicarFiltros();
-                else
-                    AtualizarTudo();
+                if (_dataFinalFiltro != value)
+                {
+                    _dataFinalFiltro = value;
+                    OnPropertyChanged();
+                    if (value.HasValue || _dataFiltro.HasValue)
+                        AplicarFiltros();
+                    else
+                        AtualizarTudo();
+                }
             }
         }
 
@@ -174,6 +205,24 @@ namespace NextBala.ViewModels
         public RelayCommand FiltrarMesCommand { get; set; }
         public RelayCommand LimparFiltrosCommand { get; set; }
         public RelayCommand AplicarFiltroDataCommand { get; set; }
+        public RelayCommand DiagnosticCommand { get; set; }
+        public RelayCommand<Pedido> CancelarPedidoCommand { get; set; }
+        public RelayCommand<Pedido> AlterarTecnicoCommand { get; set; }
+
+        #endregion
+
+        #region TOTAL GERAL
+
+        private int _totalGeralPedidos;
+        public int TotalGeralPedidos
+        {
+            get => _totalGeralPedidos;
+            private set
+            {
+                _totalGeralPedidos = value;
+                OnPropertyChanged();
+            }
+        }
 
         #endregion
 
@@ -187,15 +236,27 @@ namespace NextBala.ViewModels
             TecnicosLista = new ObservableCollection<string>();
             TecnicosPerformance = new ObservableCollection<TecnicoPerformance>();
 
+            InicializarComandos();
+
+            CarregarPedidos();
+            AtualizarCardsHoje();
+        }
+
+        private void InicializarComandos()
+        {
             FiltrarHojeCommand = new RelayCommand(FiltrarHoje);
             FiltrarMesCommand = new RelayCommand(FiltrarMes);
             LimparFiltrosCommand = new RelayCommand(LimparFiltros);
             AplicarFiltroDataCommand = new RelayCommand(AplicarFiltros);
+            DiagnosticCommand = new RelayCommand(Helpers.DiagnosticHelper.ShowDiagnosticInfo);
 
-            TecnicoFiltro = "Todos";
+            CancelarPedidoCommand = new RelayCommand<Pedido>(
+                CancelarPedido,
+                pedido => pedido?.Status == "Ativo");
 
-            CarregarPedidos();
-            AtualizarCardsHoje();
+            AlterarTecnicoCommand = new RelayCommand<Pedido>(
+                AlterarTecnico,
+                pedido => pedido?.Status == "Ativo");
         }
 
         #region PROCESSAR DATAS
@@ -205,10 +266,9 @@ namespace NextBala.ViewModels
             if (string.IsNullOrWhiteSpace(valor))
             {
                 if (inicial)
-                    _dataFiltro = null;
+                    DataFiltro = null;
                 else
-                    _dataFinalFiltro = null;
-
+                    DataFinalFiltro = null;
                 return;
             }
 
@@ -219,23 +279,14 @@ namespace NextBala.ViewModels
             {
                 if (inicial)
                 {
-                    if (_dataFiltro != data)
-                    {
-                        _dataFiltro = data;
-                        OnPropertyChanged(nameof(DataFiltro));
-                    }
+                    DataFiltro = data;
                 }
                 else
                 {
-                    if (_dataFinalFiltro != data)
-                    {
-                        _dataFinalFiltro = data;
-                        OnPropertyChanged(nameof(DataFinalFiltro));
-                    }
+                    DataFinalFiltro = data;
                 }
 
                 FiltroMesAtivo = false;
-                AplicarFiltros();
             }
         }
 
@@ -245,12 +296,21 @@ namespace NextBala.ViewModels
 
         private void AtualizarPedidosFiltrados()
         {
+            if (Pedidos == null || !Pedidos.Any())
+            {
+                PedidosFiltrados?.Clear();
+                ResultadosFiltro = "Nenhum pedido encontrado";
+                return;
+            }
+
             var query = Pedidos.AsEnumerable();
 
             // Filtro por técnico
             if (!string.IsNullOrEmpty(TecnicoFiltro) && TecnicoFiltro != "Todos")
+            {
                 query = query.Where(p => p.Itens != null &&
                                          p.Itens.Any(i => i.Tecnico == TecnicoFiltro));
+            }
 
             // INTERVALO DE DATAS
             if (DataFiltro.HasValue && DataFinalFiltro.HasValue)
@@ -287,11 +347,10 @@ namespace NextBala.ViewModels
             foreach (var p in lista)
                 PedidosFiltrados.Add(p);
 
-            // Atualizar contador de resultados
             ResultadosFiltro = $"Mostrando {PedidosFiltrados.Count} de {Pedidos.Count} pedidos";
 
             AtualizarCardsFiltrados();
-            AtualizarPerformanceTecnicos(); // <- AGORA USA OS PEDIDOS FILTRADOS
+            AtualizarPerformanceTecnicos();
         }
 
         private void AplicarFiltros()
@@ -315,7 +374,6 @@ namespace NextBala.ViewModels
             FiltroMesAtivo = false;
             DataTextoFiltro = DateTime.Today.ToString("dd/MM/yyyy");
             DataTextoFinalFiltro = DateTime.Today.ToString("dd/MM/yyyy");
-            // As propriedades DataFiltro e DataFinalFiltro serão atualizadas via ProcessarData
         }
 
         private void FiltrarMes()
@@ -341,22 +399,188 @@ namespace NextBala.ViewModels
 
         #endregion
 
+        #region AÇÕES DE PEDIDO
+
+        private void CancelarPedido(Pedido pedido)
+        {
+            if (pedido == null) return;
+
+            var result = MessageBox.Show(
+                $"Deseja realmente cancelar o pedido Nº {pedido.NumeroPedido}?",
+                "Confirmar Cancelamento",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    _service.CancelarPedido(pedido.Id);
+                    pedido.Status = "Cancelado";
+
+                    AtualizarColecoes(pedido);
+                    OnPropertyChanged(nameof(PodeCancelar));
+                    OnPropertyChanged(nameof(PodeAlterarTecnico));
+
+                    AtualizarCardsHoje();
+                    AtualizarCardsFiltrados();
+                    AtualizarPerformanceTecnicos();
+
+                    MessageBox.Show("Pedido cancelado com sucesso!", "Sucesso",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erro ao cancelar pedido: {ex.Message}", "Erro",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void AlterarTecnico(Pedido pedido)
+        {
+            if (pedido == null) return;
+
+            var dialog = CriarDialogAlterarTecnico(pedido);
+            dialog.ShowDialog();
+        }
+
+        private Window CriarDialogAlterarTecnico(Pedido pedido)
+        {
+            var dialog = new Window
+            {
+                Title = "Alterar Técnico",
+                Width = 300,
+                Height = 200,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = Application.Current.MainWindow
+            };
+
+            var stackPanel = new StackPanel { Margin = new Thickness(10) };
+
+            stackPanel.Children.Add(new TextBlock
+            {
+                Text = "Selecione o novo técnico:",
+                Margin = new Thickness(0, 0, 0, 10),
+                FontWeight = FontWeights.Bold
+            });
+
+            var tecnicosDisponiveis = TecnicosLista?.Where(t => t != "Todos").ToList() ?? new List<string>();
+
+            var comboBox = new ComboBox
+            {
+                Margin = new Thickness(0, 0, 0, 10),
+                ItemsSource = tecnicosDisponiveis,
+                SelectedIndex = 0
+            };
+
+            stackPanel.Children.Add(comboBox);
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            var btnOk = new Button
+            {
+                Content = "OK",
+                Width = 80,
+                Height = 30,
+                Margin = new Thickness(0, 0, 10, 0),
+                IsDefault = true
+            };
+
+            var btnCancel = new Button
+            {
+                Content = "Cancelar",
+                Width = 80,
+                Height = 30,
+                IsCancel = true
+            };
+
+            buttonPanel.Children.Add(btnOk);
+            buttonPanel.Children.Add(btnCancel);
+            stackPanel.Children.Add(buttonPanel);
+
+            dialog.Content = stackPanel;
+
+            btnOk.Click += (s, e) =>
+            {
+                var novoTecnico = comboBox.SelectedItem?.ToString();
+                if (!string.IsNullOrEmpty(novoTecnico))
+                {
+                    try
+                    {
+                        _service.AtualizarTecnicoPedido(pedido.Id, novoTecnico);
+
+                        if (pedido.Itens != null)
+                        {
+                            foreach (var item in pedido.Itens)
+                            {
+                                item.Tecnico = novoTecnico;
+                            }
+                        }
+
+                        AtualizarColecoes(pedido);
+                        AtualizarPerformanceTecnicos();
+
+                        MessageBox.Show($"Técnico alterado para {novoTecnico} com sucesso!",
+                            "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        dialog.DialogResult = true;
+                        dialog.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Erro ao alterar técnico: {ex.Message}", "Erro",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    dialog.Close();
+                }
+            };
+
+            btnCancel.Click += (s, e) => dialog.Close();
+
+            return dialog;
+        }
+
+        private void AtualizarColecoes(Pedido pedido)
+        {
+            var index = Pedidos.IndexOf(pedido);
+            if (index >= 0)
+            {
+                Pedidos[index] = pedido;
+            }
+
+            index = PedidosFiltrados.IndexOf(pedido);
+            if (index >= 0)
+            {
+                PedidosFiltrados[index] = pedido;
+            }
+        }
+
+        #endregion
+
         #region CARDS
 
         private void AtualizarCardsHoje()
         {
             var hoje = DateTime.Today;
-            var pedidosHoje = Pedidos.Where(p => p.Data.Date == hoje && p.Status != "Cancelado").ToList();
+            var pedidosHoje = Pedidos?.Where(p => p.Data.Date == hoje && p.Status != "Cancelado").ToList() ?? new List<Pedido>();
 
             PedidosHoje = pedidosHoje.Count;
             FaturamentoHoje = pedidosHoje.Sum(p => p.Total);
-            TicketMedio = PedidosHoje > 0 ? FaturamentoHoje / PedidosHoje : 0;
+            TicketMedio = PedidosHoje > 0 ? Math.Round(FaturamentoHoje / PedidosHoje, 2) : 0;
             ItensEmServico = pedidosHoje.SelectMany(p => p.Itens ?? Enumerable.Empty<ItemPedido>()).Count();
         }
 
         private void AtualizarCardsFiltrados()
         {
-            var pedidos = PedidosFiltrados.Where(p => p.Status != "Cancelado").ToList();
+            var pedidos = PedidosFiltrados?.Where(p => p.Status != "Cancelado").ToList() ?? new List<Pedido>();
 
             PedidosFiltradosTotal = pedidos.Count;
             FaturamentoFiltrado = pedidos.Sum(p => p.Total);
@@ -373,13 +597,27 @@ namespace NextBala.ViewModels
 
         private void CarregarPedidos()
         {
-            var lista = _service.ObterPedidos().ToList();
+            try
+            {
+                var lista = _service.ObterPedidos().ToList();
 
-            Pedidos.Clear();
-            foreach (var p in lista)
-                Pedidos.Add(p);
+                Pedidos.Clear();
+                foreach (var p in lista)
+                    Pedidos.Add(p);
 
-            // Carregar lista de técnicos para o ComboBox
+                CarregarTecnicos(lista);
+                AtualizarPedidosFiltrados();
+                AtualizarCardsHoje();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar pedidos: {ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CarregarTecnicos(List<Pedido> lista)
+        {
             var tecnicos = lista
                 .SelectMany(p => p.Itens ?? Enumerable.Empty<ItemPedido>())
                 .Where(i => !string.IsNullOrWhiteSpace(i.Tecnico))
@@ -392,15 +630,19 @@ namespace NextBala.ViewModels
             TecnicosLista.Add("Todos");
             foreach (var t in tecnicos)
                 TecnicosLista.Add(t);
-
-            AtualizarPedidosFiltrados();
-            AtualizarCardsHoje();
         }
 
         private void AtualizarPerformanceTecnicos()
         {
-            // Usar PedidosFiltrados para a performance (respeita os filtros de data)
-            var fonte = PedidosFiltrados.Any() ? PedidosFiltrados : Pedidos;
+            // Usar PedidosFiltrados para a performance (já respeita os filtros de data e técnico)
+            var fonte = PedidosFiltrados;
+
+            if (fonte == null || !fonte.Any())
+            {
+                TecnicosPerformance?.Clear();
+                TotalGeralPedidos = 0;
+                return;
+            }
 
             var perf = fonte
                 .Where(p => p.Status != "Cancelado")
@@ -419,19 +661,16 @@ namespace NextBala.ViewModels
             foreach (var t in perf)
                 TecnicosPerformance.Add(t);
 
-            // Calcular total geral de pedidos nos itens (para exibir no rodapé)
             TotalGeralPedidos = perf.Sum(t => t.TotalPedidos);
-            OnPropertyChanged(nameof(TotalGeralPedidos));
         }
-
-        // Propriedade para o total geral de pedidos (usada no XAML)
-        public int TotalGeralPedidos { get; private set; }
 
         #endregion
 
         public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string nome = "")
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nome));
+        protected virtual void OnPropertyChanged([CallerMemberName] string nome = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nome));
+        }
     }
 
     public class TecnicoPerformance

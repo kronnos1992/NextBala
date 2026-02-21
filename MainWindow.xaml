@@ -13,7 +13,7 @@
         MinWidth="1000">
 
         <Window.DataContext>
-                <vm:MainViewModel/>
+                <vm:MainWindowViewModel/>
         </Window.DataContext>
 
         <Window.Resources>

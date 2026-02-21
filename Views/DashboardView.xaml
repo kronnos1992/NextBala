@@ -473,8 +473,8 @@
                                                                            Margin="0,0,0,1"/>
 
                                                                 <TextBox Text="{Binding DataTextoFiltro,
-                                UpdateSourceTrigger=PropertyChanged,
-                                Converter={StaticResource DateMaskConverter}}"
+                                        UpdateSourceTrigger=PropertyChanged,
+                                        Converter={StaticResource DateMaskConverter}}"
                                                                          Style="{StaticResource DataTextBoxStyle}"
                                                                          Height="24"
                                                                          FontSize="10"
@@ -497,8 +497,8 @@
                                                                            Margin="0,0,0,1"/>
 
                                                                 <TextBox Text="{Binding DataTextoFinalFiltro,
-                                UpdateSourceTrigger=PropertyChanged,
-                                Converter={StaticResource DateMaskConverter}}"
+                                        UpdateSourceTrigger=PropertyChanged,
+                                        Converter={StaticResource DateMaskConverter}}"
                                                                          Style="{StaticResource DataTextBoxStyle}"
                                                                          Height="24"
                                                                          FontSize="10"
@@ -559,33 +559,6 @@
                                                                   SelectedItem="{Binding PedidoSelecionado, Mode=TwoWay}"
                                                                   x:Name="PedidosDataGrid">
 
-                                                                <!-- ContextMenu do DataGrid -->
-                                                                <DataGrid.ContextMenu>
-                                                                        <ContextMenu>
-                                                                                <MenuItem Header="Alterar Técnico"
-                                                                                          Command="{Binding AlterarTecnicoCommand}"
-                                                                                          CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                                                          IsEnabled="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource NotNullConverter}}">
-                                                                                        <MenuItem.Icon>
-                                                                                                <TextBlock Text="🔧"
-                                                                                                                FontSize="14"
-                                                                                                                Margin="5,0,5,0"/>
-                                                                                        </MenuItem.Icon>
-                                                                                </MenuItem>
-                                                                                <Separator/>
-                                                                                <MenuItem Header="Cancelar Pedido"
-                                                                                          Command="{Binding CancelarPedidoCommand}"
-                                                                                          CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                                                          IsEnabled="{Binding PlacementTarget.SelectedItem.Status, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Ativo}">
-                                                                                        <MenuItem.Icon>
-                                                                                                <TextBlock Text="❌"
-                                                                                                                FontSize="14"
-                                                                                                                Margin="5,0,5,0"/>
-                                                                                        </MenuItem.Icon>
-                                                                                </MenuItem>
-                                                                        </ContextMenu>
-                                                                </DataGrid.ContextMenu>
-
                                                                 <DataGrid.Columns>
                                                                         <DataGridTextColumn Header="Nº"
                                                                                             Binding="{Binding NumeroPedido}"
@@ -605,11 +578,11 @@
                                                                                 <DataGridTextColumn.ElementStyle>
                                                                                         <Style TargetType="TextBlock">
                                                                                                 <Setter Property="FontSize"
-                                                                                                                Value="9"/>
+                                                                                                        Value="9"/>
                                                                                                 <Setter Property="VerticalAlignment"
-                                                                                                                Value="Center"/>
+                                                                                                        Value="Center"/>
                                                                                                 <Setter Property="Foreground"
-                                                                                                                Value="#2C3E50"/>
+                                                                                                        Value="#2C3E50"/>
                                                                                         </Style>
                                                                                 </DataGridTextColumn.ElementStyle>
                                                                         </DataGridTextColumn>
@@ -625,21 +598,21 @@
                                                                                 <DataGridTextColumn.ElementStyle>
                                                                                         <Style TargetType="TextBlock">
                                                                                                 <Setter Property="FontWeight"
-                                                                                                                Value="SemiBold"/>
+                                                                                                        Value="SemiBold"/>
                                                                                                 <Setter Property="VerticalAlignment"
-                                                                                                                Value="Center"/>
+                                                                                                        Value="Center"/>
                                                                                                 <Setter Property="FontSize"
-                                                                                                                Value="9"/>
+                                                                                                        Value="9"/>
                                                                                                 <Style.Triggers>
                                                                                                         <DataTrigger Binding="{Binding Status}"
-                                                                                                                        Value="Cancelado">
+                                                                                                                     Value="Cancelado">
                                                                                                                 <Setter Property="Foreground"
-                                                                                                                                Value="#E74C3C"/>
+                                                                                                                        Value="#E74C3C"/>
                                                                                                         </DataTrigger>
                                                                                                         <DataTrigger Binding="{Binding Status}"
-                                                                                                                        Value="Ativo">
+                                                                                                                     Value="Ativo">
                                                                                                                 <Setter Property="Foreground"
-                                                                                                                                Value="#27AE60"/>
+                                                                                                                        Value="#27AE60"/>
                                                                                                         </DataTrigger>
                                                                                                 </Style.Triggers>
                                                                                         </Style>
@@ -649,7 +622,7 @@
                                                         </DataGrid>
                                                 </Border>
 
-                                                <!-- Botões Cancelar e Alterar Técnico -->
+                                                <!-- Botões Cancelar e Alterar Técnico - Agora funcionais -->
                                                 <Grid Margin="0,8,0,0">
                                                         <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*"/>
@@ -669,31 +642,8 @@
                                                                 FontSize="10"
                                                                 FontWeight="Bold"
                                                                 Padding="4,0"
-                                                                Margin="0,0,5,0">
-                                                                <Button.Style>
-                                                                        <Style TargetType="Button"
-                                                                                        BasedOn="{StaticResource {x:Type Button}}">
-                                                                                <Setter Property="IsEnabled"
-                                                                                                Value="False"/>
-                                                                                <Setter Property="Background"
-                                                                                                Value="#95A5A6"/>
-                                                                                <Style.Triggers>
-                                                                                        <DataTrigger Binding="{Binding SelectedItem.Status, ElementName=PedidosDataGrid}"
-                                                                                                        Value="Ativo">
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="True"/>
-                                                                                                <Setter Property="Background"
-                                                                                                                Value="#E74C3C"/>
-                                                                                        </DataTrigger>
-                                                                                        <Trigger Property="IsMouseOver"
-                                                                                                        Value="True">
-                                                                                                <Setter Property="Background"
-                                                                                                                Value="#C0392B"/>
-                                                                                        </Trigger>
-                                                                                </Style.Triggers>
-                                                                        </Style>
-                                                                </Button.Style>
-                                                        </Button>
+                                                                Margin="0,0,5,0"
+                                                                IsEnabled="{Binding PodeCancelar}"/>
 
                                                         <!-- Botão Alterar Técnico -->
                                                         <Button Grid.Column="2"
@@ -706,66 +656,8 @@
                                                                 FontSize="10"
                                                                 FontWeight="Bold"
                                                                 Padding="4,0"
-                                                                Margin="0,0,0,0">
-                                                                <Button.Style>
-                                                                        <Style TargetType="Button"
-                                                                                        BasedOn="{StaticResource {x:Type Button}}">
-                                                                                <Setter Property="IsEnabled"
-                                                                                                Value="False"/>
-                                                                                <Setter Property="Background"
-                                                                                                Value="#95A5A6"/>
-                                                                                <Style.Triggers>
-                                                                                        <MultiDataTrigger>
-                                                                                                <MultiDataTrigger.Conditions>
-                                                                                                        <Condition Binding="{Binding SelectedItem, ElementName=PedidosDataGrid}"
-                                                                                                                        Value="{x:Null}"/>
-                                                                                                </MultiDataTrigger.Conditions>
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="False"/>
-                                                                                        </MultiDataTrigger>
-                                                                                        <MultiDataTrigger>
-                                                                                                <MultiDataTrigger.Conditions>
-                                                                                                        <Condition Binding="{Binding SelectedItem, ElementName=PedidosDataGrid}"
-                                                                                                                        Value="{x:Null}"/>
-                                                                                                        <Condition Binding="{Binding SelectedItem.Status, ElementName=PedidosDataGrid}"
-                                                                                                                        Value="Cancelado"/>
-                                                                                                </MultiDataTrigger.Conditions>
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="False"/>
-                                                                                        </MultiDataTrigger>
-                                                                                        <MultiDataTrigger>
-                                                                                                <MultiDataTrigger.Conditions>
-                                                                                                        <Condition Binding="{Binding SelectedItem, ElementName=PedidosDataGrid}"
-                                                                                                                        Value="{x:Null}"/>
-                                                                                                        <Condition Binding="{Binding SelectedItem.Status, ElementName=PedidosDataGrid}"
-                                                                                                                        Value="Ativo"/>
-                                                                                                </MultiDataTrigger.Conditions>
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="True"/>
-                                                                                                <Setter Property="Background"
-                                                                                                                Value="#3498DB"/>
-                                                                                        </MultiDataTrigger>
-                                                                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=PedidosDataGrid}"
-                                                                                                        Value="{x:Null}">
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="False"/>
-                                                                                        </DataTrigger>
-                                                                                        <DataTrigger Binding="{Binding SelectedItem.Status, ElementName=PedidosDataGrid}"
-                                                                                                        Value="Ativo">
-                                                                                                <Setter Property="IsEnabled"
-                                                                                                                Value="True"/>
-                                                                                                <Setter Property="Background"
-                                                                                                                Value="#3498DB"/>
-                                                                                        </DataTrigger>
-                                                                                        <Trigger Property="IsMouseOver"
-                                                                                                        Value="True">
-                                                                                                <Setter Property="Background"
-                                                                                                                Value="#2980B9"/>
-                                                                                        </Trigger>
-                                                                                </Style.Triggers>
-                                                                        </Style>
-                                                                </Button.Style>
-                                                        </Button>
+                                                                Margin="0,0,0,0"
+                                                                IsEnabled="{Binding PodeAlterarTecnico}"/>
                                                 </Grid>
 
                                                 <!-- Contador de resultados -->
@@ -845,6 +737,13 @@
                                                                            Style="{StaticResource LabelStyle}"/>
                                                         </StackPanel>
                                                 </Border>
+
+                                                <!-- Checkbox para Performance Filtrada -->
+                                                <CheckBox Content="Mostrar performance filtrada"
+                                                          IsChecked="{Binding PerformanceFiltrada}"
+                                                          Margin="0,10,0,0"
+                                                          FontSize="10"
+                                                          Foreground="#2C3E50"/>
 
                                                 <!-- Legenda do filtro atual -->
                                                 <Border Background="#F0F7FF"
@@ -963,6 +862,42 @@
                                                                            Foreground="White"/>
                                                         </Border>
                                                 </Grid>
+
+                                                <!-- Botão de Diagnóstico -->
+                                                <Button Content="🔧 Diagnóstico"
+                                                        Command="{Binding DiagnosticCommand}"
+                                                        Background="Transparent"
+                                                        Height="24"
+                                                        FontSize="10"
+                                                        HorizontalAlignment="Right"
+                                                        Margin="0,10,0,0"
+                                                        Cursor="Hand"
+                                                        Padding="8,2">
+                                                        <Button.Style>
+                                                                <Style TargetType="Button"
+                                                                                BasedOn="{StaticResource {x:Type Button}}">
+                                                                        <Setter Property="Background"
+                                                                                        Value="Transparent"/>
+                                                                        <Setter Property="Foreground"
+                                                                                        Value="#95A5A6"/>
+                                                                        <Setter Property="BorderThickness"
+                                                                                        Value="1"/>
+                                                                        <Setter Property="BorderBrush"
+                                                                                        Value="#D6DFEA"/>
+                                                                        <Setter Property="MinWidth"
+                                                                                        Value="80"/>
+                                                                        <Style.Triggers>
+                                                                                <Trigger Property="IsMouseOver"
+                                                                                                Value="True">
+                                                                                        <Setter Property="Foreground"
+                                                                                                        Value="#3498DB"/>
+                                                                                        <Setter Property="BorderBrush"
+                                                                                                        Value="#3498DB"/>
+                                                                                </Trigger>
+                                                                        </Style.Triggers>
+                                                                </Style>
+                                                        </Button.Style>
+                                                </Button>
                                         </StackPanel>
                                 </Border>
                         </Grid>

@@ -388,39 +388,25 @@ namespace NextBala.Services
             {
                 var sb = new StringBuilder();
 
-                sb.AppendLine("=".PadRight(32, '='));
-                sb.AppendLine("      NEXTBALA - TICKET");
-                sb.AppendLine("=".PadRight(32, '='));
-                sb.AppendLine();
+                sb.AppendLine("====== TICKET ======");
+                sb.AppendLine($"Pedido Nº: {pedido.NumeroPedido}");
+                sb.AppendLine($"Cliente: {pedido.Cliente?.Nome}");
+                sb.AppendLine($"Telefone: {pedido.Cliente?.Telefone}");
+                sb.AppendLine($"Data: {pedido.Data:dd/MM/yyyy}");
 
-                sb.AppendLine($"PEDIDO: #{pedido.NumeroPedido:D4}");
-                sb.AppendLine($"DATA: {pedido.Data:dd/MM/yyyy HH:mm}");
-                sb.AppendLine();
-
-                sb.AppendLine("CLIENTE:");
-                sb.AppendLine($"{pedido.Cliente?.Nome}");
-                if (!string.IsNullOrWhiteSpace(pedido.Cliente?.Telefone))
-                    sb.AppendLine($"TEL: {pedido.Cliente.Telefone}");
-
-                sb.AppendLine();
-                sb.AppendLine("ITENS:");
-
-                foreach (var item in pedido.Itens)
+                // Adicionar informações dos itens com técnico
+                if (pedido.Itens != null && pedido.Itens.Any())
                 {
-                    sb.AppendLine($"- {item.Marca} {item.Modelo}");
-                    if (!string.IsNullOrWhiteSpace(item.Defeito))
-                        sb.AppendLine($"  Defeito: {item.Defeito}");
-                    if (!string.IsNullOrWhiteSpace(item.Tecnico) && item.Tecnico != "Não atribuído")
-                        sb.AppendLine($"  Técnico: {item.Tecnico}");
-                    sb.AppendLine($"  Preço: {item.Preco:N2} AOA");
-                    sb.AppendLine();
+                    foreach (var item in pedido.Itens)
+                    {
+                        sb.AppendLine($"Técnico: {item.Tecnico ?? "Não atribuído"}");
+                    }
                 }
-
-                sb.AppendLine("-".PadRight(32, '-'));
-                sb.AppendLine($"TOTAL: {pedido.Total:N2} AOA");
-                sb.AppendLine("=".PadRight(32, '='));
-                sb.AppendLine("   OBRIGADO PELA PREFERÊNCIA!");
-                sb.AppendLine("=".PadRight(32, '='));
+                else
+                {
+                    sb.AppendLine("Nenhum item no pedido");
+                }
+                sb.AppendLine("=== BALANGOLA ===");
 
                 return sb.ToString();
             }

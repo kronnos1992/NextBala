@@ -91,7 +91,7 @@ namespace NextBala.Services
             EnviarComandoCorte();
         }
 
-        private string GerarLayout(int numero, string cliente, DateTime data)
+        private static string GerarLayout(int numero, string cliente, DateTime data)
         {
             var sb = new StringBuilder();
 
