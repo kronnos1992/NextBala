@@ -91,9 +91,9 @@ namespace NextBala.Migrations
                 column: "Data");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Pedidos_NumeroPedido",
+                name: "IX_Pedidos_Data_NumeroPedido",
                 table: "Pedidos",
-                column: "NumeroPedido",
+                columns: new[] { "Data", "NumeroPedido" },
                 unique: true);
         }
 

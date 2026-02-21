@@ -11,8 +11,8 @@ using NextBala.Data;
 namespace NextBala.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260219064048_SecondCreate")]
-    partial class SecondCreate
+    [Migration("20260220131658_ThirdCreate")]
+    partial class ThirdCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,13 +91,17 @@ namespace NextBala.Migrations
                     b.Property<int>("NumeroPedido")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
 
                     b.HasIndex("Data");
 
-                    b.HasIndex("NumeroPedido")
+                    b.HasIndex("Data", "NumeroPedido")
                         .IsUnique();
 
                     b.ToTable("Pedidos");

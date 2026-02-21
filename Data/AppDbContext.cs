@@ -48,10 +48,10 @@ public class AppDbContext : DbContext
             .WithMany(p => p.Itens)
             .HasForeignKey(i => i.PedidoId);
 
-        // Configurar índices para melhor performance
+        // OU crie um índice composto com Data + NumeroPedido
         modelBuilder.Entity<Pedido>()
-            .HasIndex(p => p.NumeroPedido)
-            .IsUnique();
+            .HasIndex(p => new { p.Data, p.NumeroPedido })
+            .IsUnique(true); // Único por dia (melhor opção!)
 
         modelBuilder.Entity<Pedido>()
             .HasIndex(p => p.Data);

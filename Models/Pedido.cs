@@ -17,7 +17,9 @@ namespace NextBala.Models
 
         public decimal Total => Itens.Sum(i => i.Preco);
 
-        // NOVA PROPRIEDADE: Concatena os nomes dos técnicos dos itens
+        // Status do pedido (Ativo ou Cancelado)
+        public string Status { get; set; } = "Ativo";
+
         public string TecnicosConcatenados =>
             Itens != null && Itens.Any()
                 ? string.Join(", ", Itens.Select(i => i.Tecnico).Distinct())

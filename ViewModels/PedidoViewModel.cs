@@ -1,10 +1,13 @@
 using NextBala.Commands;
 using NextBala.Models;
 using NextBala.Services;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
@@ -16,7 +19,12 @@ namespace NextBala.ViewModels
         private System.Timers.Timer _timer;
 
         // Pedido atual
-        public Pedido PedidoAtual { get; set; } = new Pedido();
+        private Pedido _pedidoAtual;
+        public Pedido PedidoAtual
+        {
+            get => _pedidoAtual;
+            set { _pedidoAtual = value; OnPropertyChanged(); }
+        }
 
         // Campos do cliente
         private string _clienteNome;
@@ -35,19 +43,39 @@ namespace NextBala.ViewModels
 
         // Campos do item
         private string _marca;
-        public string Marca { get => _marca; set { _marca = value; OnPropertyChanged(); } }
+        public string Marca
+        {
+            get => _marca;
+            set { _marca = value; OnPropertyChanged(); }
+        }
 
         private string _modelo;
-        public string Modelo { get => _modelo; set { _modelo = value; OnPropertyChanged(); } }
+        public string Modelo
+        {
+            get => _modelo;
+            set { _modelo = value; OnPropertyChanged(); }
+        }
 
         private string _defeito;
-        public string Defeito { get => _defeito; set { _defeito = value; OnPropertyChanged(); } }
+        public string Defeito
+        {
+            get => _defeito;
+            set { _defeito = value; OnPropertyChanged(); }
+        }
 
         private string _tecnico;
-        public string Tecnico { get => _tecnico; set { _tecnico = value; OnPropertyChanged(); } }
+        public string Tecnico
+        {
+            get => _tecnico;
+            set { _tecnico = value; OnPropertyChanged(); }
+        }
 
         private string _preco;
-        public string Preco { get => _preco; set { _preco = value; OnPropertyChanged(); } }
+        public string Preco
+        {
+            get => _preco;
+            set { _preco = value; OnPropertyChanged(); }
+        }
 
         private string _ticket;
         public string Ticket
@@ -64,53 +92,293 @@ namespace NextBala.ViewModels
             set { _dataAtual = value; OnPropertyChanged(); }
         }
 
-        // Listas
+        // Listas principais
         public ObservableCollection<ItemPedido> Itens { get; set; } = new();
         public ObservableCollection<Pedido> Pedidos { get; set; } = new();
+        public ObservableCollection<Pedido> PedidosFiltrados { get; set; } = new();
+
+        // Lista de técnicos para filtro
+        private ObservableCollection<string> _tecnicosLista;
+        public ObservableCollection<string> TecnicosLista
+        {
+            get => _tecnicosLista;
+            set { _tecnicosLista = value; OnPropertyChanged(); }
+        }
+
+        // Propriedades para filtros
+        private string _tecnicoFiltro;
+        public string TecnicoFiltro
+        {
+            get => _tecnicoFiltro;
+            set
+            {
+                _tecnicoFiltro = value;
+                OnPropertyChanged();
+                AplicarFiltros();
+            }
+        }
+
+        private string _dataTextoFiltro;
+        public string DataTextoFiltro
+        {
+            get => _dataTextoFiltro;
+            set
+            {
+                if (_dataTextoFiltro != value)
+                {
+                    _dataTextoFiltro = value;
+                    OnPropertyChanged();
+
+                    // Tenta converter quando tem 10 caracteres (dd/MM/yyyy)
+                    if (!string.IsNullOrWhiteSpace(value) && value.Length == 10)
+                    {
+                        if (DateTime.TryParseExact(value, "dd/MM/yyyy",
+                            CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime data))
+                        {
+                            DataFiltro = data;
+                            FiltroHoje = false;
+                            FiltroMes = false;
+                        }
+                        else
+                        {
+                            // Data inválida - limpa o filtro
+                            DataFiltro = null;
+                        }
+                    }
+                    else if (string.IsNullOrWhiteSpace(value))
+                    {
+                        DataFiltro = null;
+                    }
+                }
+            }
+        }
+
+        private DateTime? _dataFiltro;
+        public DateTime? DataFiltro
+        {
+            get => _dataFiltro;
+            set
+            {
+                _dataFiltro = value;
+                OnPropertyChanged();
+                AplicarFiltros();
+            }
+        }
+
+        private bool _filtroHoje;
+        public bool FiltroHoje
+        {
+            get => _filtroHoje;
+            set
+            {
+                _filtroHoje = value;
+                OnPropertyChanged();
+                if (value)
+                {
+                    DataTextoFiltro = DateTime.Today.ToString("dd/MM/yyyy");
+                    DataFiltro = DateTime.Today;
+                    FiltroMes = false;
+                }
+            }
+        }
+
+        private bool _filtroMes;
+        public bool FiltroMes
+        {
+            get => _filtroMes;
+            set
+            {
+                _filtroMes = value;
+                OnPropertyChanged();
+                if (value)
+                {
+                    DataTextoFiltro = string.Empty;
+                    DataFiltro = null;
+                    FiltroHoje = false;
+                    AplicarFiltros();
+                }
+            }
+        }
+
+        private string _resultadosFiltro;
+        public string ResultadosFiltro
+        {
+            get => _resultadosFiltro;
+            set { _resultadosFiltro = value; OnPropertyChanged(); }
+        }
 
         // Comandos
         public RelayCommand AdicionarItemCommand { get; set; }
         public RelayCommand SalvarPedidoCommand { get; set; }
         public RelayCommand GerarTicketCommand { get; set; }
+        public RelayCommand NovoPedidoCommand { get; set; }
+        public RelayCommand LimparFiltrosCommand { get; set; }
+        public RelayCommand AplicarFiltroDataCommand { get; set; }
+        public RelayCommand FiltrarHojeCommand { get; set; }
+        public RelayCommand FiltrarMesCommand { get; set; }
+
+        // Comando para cancelar pedido
+        public RelayCommand<Pedido> CancelarPedidoCommand { get; set; }
 
         public PedidoViewModel()
         {
             var db = new Data.AppDbContext();
             _service = new PedidoService(db);
 
+            PedidoAtual = new Pedido();
+            TecnicosLista = new ObservableCollection<string>();
+
             // Carrega pedidos existentes
             CarregarPedidos();
 
-            // Comandos
+            // Comandos sem parâmetro
             AdicionarItemCommand = new RelayCommand(AdicionarItem);
             SalvarPedidoCommand = new RelayCommand(SalvarPedido);
             GerarTicketCommand = new RelayCommand(GerarTicket);
+            NovoPedidoCommand = new RelayCommand(NovoPedido);
+            LimparFiltrosCommand = new RelayCommand(LimparFiltros);
+            AplicarFiltroDataCommand = new RelayCommand(AplicarFiltroData);
+            FiltrarHojeCommand = new RelayCommand(FiltrarHoje);
+            FiltrarMesCommand = new RelayCommand(FiltrarMes);
+
+            // Comando com parâmetro
+            CancelarPedidoCommand = new RelayCommand<Pedido>(CancelarPedido);
 
             // Inicializar data atual
             DataAtual = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
 
             // Iniciar relógio em tempo real
             IniciarRelogio();
+
+            // Inicializar filtro com "Todos"
+            TecnicoFiltro = "Todos";
         }
 
-        // Método para carregar pedidos
+        // ========== MÉTODOS PRINCIPAIS ==========
+
         private void CarregarPedidos()
         {
-            Pedidos.Clear();
-            foreach (var p in _service.ObterPedidos())
+            try
             {
-                // Garantir que a propriedade calculada funcione
-                Pedidos.Add(p);
+                Pedidos.Clear();
+                foreach (var p in _service.ObterPedidos())
+                {
+                    Pedidos.Add(p);
+                }
+                AtualizarPedidosFiltrados();
+                CarregarTecnicos();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar pedidos: {ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // Inicia o timer para atualizar o relógio a cada segundo
+        private void CarregarTecnicos()
+        {
+            try
+            {
+                var tecnicos = Pedidos
+                    .SelectMany(p => p.Itens)
+                    .Select(i => i.Tecnico)
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Distinct()
+                    .OrderBy(t => t)
+                    .ToList();
+
+                TecnicosLista.Clear();
+                TecnicosLista.Add("Todos");
+                foreach (var t in tecnicos)
+                {
+                    TecnicosLista.Add(t);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao carregar técnicos: {ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void AplicarFiltros()
+        {
+            AtualizarPedidosFiltrados();
+        }
+
+        private void AplicarFiltroData()
+        {
+            AplicarFiltros();
+        }
+
+        private void FiltrarHoje()
+        {
+            FiltroHoje = true;
+        }
+
+        private void FiltrarMes()
+        {
+            FiltroMes = true;
+        }
+
+        private void AtualizarPedidosFiltrados()
+        {
+            try
+            {
+                var query = Pedidos.AsEnumerable();
+
+                // Filtro por técnico
+                if (!string.IsNullOrEmpty(TecnicoFiltro) && TecnicoFiltro != "Todos")
+                {
+                    query = query.Where(p => p.Itens != null &&
+                                           p.Itens.Any(i => i.Tecnico == TecnicoFiltro));
+                }
+
+                // Filtro por data específica
+                if (DataFiltro.HasValue)
+                {
+                    query = query.Where(p => p.Data.Date == DataFiltro.Value.Date);
+                }
+                // Filtro por mês atual
+                else if (FiltroMes)
+                {
+                    var hoje = DateTime.Today;
+                    query = query.Where(p => p.Data.Year == hoje.Year &&
+                                           p.Data.Month == hoje.Month);
+                }
+
+                var listaFiltrada = query.OrderByDescending(p => p.Data).ToList();
+
+                PedidosFiltrados.Clear();
+                foreach (var pedido in listaFiltrada)
+                {
+                    PedidosFiltrados.Add(pedido);
+                }
+
+                ResultadosFiltro = $"Mostrando {PedidosFiltrados.Count} de {Pedidos.Count} pedidos";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erro ao filtrar pedidos: {ex.Message}", "Erro",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void LimparFiltros()
+        {
+            TecnicoFiltro = "Todos";
+            DataTextoFiltro = string.Empty;
+            DataFiltro = null;
+            FiltroHoje = false;
+            FiltroMes = false;
+            AplicarFiltros();
+        }
+
         private void IniciarRelogio()
         {
-            _timer = new System.Timers.Timer(1000); // 1 segundo
+            _timer = new System.Timers.Timer(1000);
             _timer.Elapsed += (s, e) =>
             {
-                // Atualizar na UI thread
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     DataAtual = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
@@ -119,19 +387,27 @@ namespace NextBala.ViewModels
             _timer.Start();
         }
 
-        // Adiciona um item ao pedido
+        // ========== MÉTODOS DE NEGÓCIO ==========
+
         private void AdicionarItem()
         {
-            if (string.IsNullOrWhiteSpace(Marca) || string.IsNullOrWhiteSpace(Modelo))
+            if (string.IsNullOrWhiteSpace(Marca))
             {
-                MessageBox.Show("Preencha marca e modelo do item.", "Atenção",
+                MessageBox.Show("Preencha a marca do item.", "Atenção",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (!decimal.TryParse(Preco, out decimal preco))
+            if (string.IsNullOrWhiteSpace(Modelo))
             {
-                MessageBox.Show("Preço inválido.", "Atenção",
+                MessageBox.Show("Preencha o modelo do item.", "Atenção",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!decimal.TryParse(Preco, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal preco))
+            {
+                MessageBox.Show("Preço inválido. Use apenas números (ex: 15000.50)", "Atenção",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -140,19 +416,56 @@ namespace NextBala.ViewModels
             {
                 Marca = Marca,
                 Modelo = Modelo,
-                Defeito = Defeito,
-                Tecnico = Tecnico,
+                Defeito = Defeito ?? string.Empty,
+                Tecnico = string.IsNullOrWhiteSpace(Tecnico) ? "Não atribuído" : Tecnico,
                 Preco = preco
             };
 
             Itens.Add(item);
             PedidoAtual.Itens.Add(item);
 
-            // limpa campos
-            Marca = Modelo = Defeito = Tecnico = Preco = string.Empty;
+            Marca = string.Empty;
+            Modelo = string.Empty;
+            Defeito = string.Empty;
+            Tecnico = string.Empty;
+            Preco = string.Empty;
+
+            if (PedidoAtual.Id > 0)
+            {
+                Ticket = _service.GerarTicket(PedidoAtual);
+            }
         }
 
-        // Salva pedido no banco e já gera/imprime o ticket
+        private int ObterProximoNumeroPedido()
+        {
+            var hoje = DateTime.Today;
+
+            var pedidosDeHoje = Pedidos
+                .Where(p => p.Data.Date == hoje)
+                .ToList();
+
+            if (!pedidosDeHoje.Any())
+                return 1;
+
+            var maiorNumeroHoje = pedidosDeHoje.Max(p => p.NumeroPedido);
+            return maiorNumeroHoje + 1;
+        }
+
+        private void NovoPedido()
+        {
+            var result = MessageBox.Show("Iniciar novo pedido? Os dados não salvos serão perdidos.",
+                "Novo Pedido", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                PedidoAtual = new Pedido();
+                Itens.Clear();
+                ClienteNome = string.Empty;
+                ClienteTelefone = string.Empty;
+                Ticket = string.Empty;
+            }
+        }
+
         private void SalvarPedido()
         {
             if (string.IsNullOrWhiteSpace(ClienteNome))
@@ -171,42 +484,63 @@ namespace NextBala.ViewModels
 
             try
             {
-                var cliente = new Cliente
+                Cliente clienteExistente = null;
+
+                if (!string.IsNullOrWhiteSpace(ClienteTelefone))
                 {
-                    Nome = ClienteNome,
-                    Telefone = ClienteTelefone
-                };
+                    clienteExistente = _service.ObterClientePorTelefone(ClienteTelefone);
+                }
 
-                _service.AdicionarCliente(cliente);
+                if (clienteExistente != null)
+                {
+                    PedidoAtual.Cliente = clienteExistente;
+                    PedidoAtual.ClienteId = clienteExistente.Id;
 
-                PedidoAtual.Cliente = cliente;
-                PedidoAtual.NumeroPedido = Pedidos.Count + 1;
+                    if (clienteExistente.Nome != ClienteNome)
+                    {
+                        clienteExistente.Nome = ClienteNome;
+                        _service.AtualizarCliente(clienteExistente);
+                    }
+                }
+                else
+                {
+                    var novoCliente = new Cliente
+                    {
+                        Nome = ClienteNome,
+                        Telefone = ClienteTelefone ?? string.Empty
+                    };
+
+                    _service.AdicionarCliente(novoCliente);
+                    PedidoAtual.Cliente = novoCliente;
+                    PedidoAtual.ClienteId = novoCliente.Id;
+                }
+
+                PedidoAtual.NumeroPedido = ObterProximoNumeroPedido();
                 PedidoAtual.Data = DateTime.Now;
+                PedidoAtual.Status = "Ativo";
 
                 _service.AdicionarPedido(PedidoAtual);
 
-                // Adicionar à lista visível
                 Pedidos.Add(PedidoAtual);
 
-                // Disparar notificação para atualizar a propriedade calculada na UI
-                OnPropertyChanged(nameof(Pedidos));
-
-                // GERAR E IMPRIMIR TICKET AUTOMATICAMENTE
                 string ticketGerado = _service.GerarTicket(PedidoAtual);
                 Ticket = ticketGerado;
 
-                // Imprimir duas cópias do ticket
                 ImprimirTicket(ticketGerado, 2);
 
-                // Preparar para novo pedido
+                AtualizarPedidosFiltrados();
+                CarregarTecnicos();
+
+                var pedidoSalvo = PedidoAtual;
+
                 PedidoAtual = new Pedido();
                 Itens.Clear();
                 ClienteNome = string.Empty;
                 ClienteTelefone = string.Empty;
                 Ticket = string.Empty;
 
-                MessageBox.Show("Pedido salvo e ticket impresso com sucesso!", "Sucesso",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Pedido #{pedidoSalvo.NumeroPedido} salvo e ticket impresso com sucesso!",
+                    "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -215,7 +549,43 @@ namespace NextBala.ViewModels
             }
         }
 
-        // Gera ticket manualmente (opcional)
+        private void CancelarPedido(Pedido? pedido)
+        {
+            if (pedido == null) return;
+
+            var result = MessageBox.Show(
+                $"Tem certeza que deseja cancelar o pedido #{pedido.NumeroPedido} do cliente {pedido.Cliente?.Nome}?",
+                "Confirmar Cancelamento",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    _service.CancelarPedido(pedido.Id);
+
+                    pedido.Status = "Cancelado";
+
+                    var index = Pedidos.IndexOf(pedido);
+                    if (index >= 0)
+                    {
+                        Pedidos[index] = pedido;
+                    }
+
+                    AtualizarPedidosFiltrados();
+
+                    MessageBox.Show($"Pedido #{pedido.NumeroPedido} cancelado com sucesso!",
+                        "Sucesso", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Erro ao cancelar pedido: {ex.Message}",
+                        "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void GerarTicket()
         {
             if (PedidoAtual == null || PedidoAtual.Id == 0)
@@ -236,35 +606,51 @@ namespace NextBala.ViewModels
             }
         }
 
-        // Imprime tickets
-        private static void ImprimirTicket(string ticketTexto, int copias = 1)
+        private void ImprimirTicket(string ticketTexto, int copias = 1)
         {
             try
             {
                 PrintDocument pd = new PrintDocument();
-                pd.PrinterSettings.PrinterName = "Xprinter XP-235B";
 
-                int largura = 280;   // ~58mm
-                int altura = 120;    // Aumentei a altura para acomodar mais informações
+                try
+                {
+                    pd.PrinterSettings.PrinterName = "Xprinter XP-235B";
+                }
+                catch
+                {
+                    // Usa impressora padrão
+                }
+
+                int largura = 280;
+                int altura = 200;
 
                 pd.DefaultPageSettings.PaperSize = new PaperSize("Ticket", largura, altura);
+                pd.DefaultPageSettings.Margins = new Margins(5, 5, 5, 5);
 
                 int copiaAtual = 0;
 
                 pd.PrintPage += (sender, e) =>
                 {
-                    using var font = new System.Drawing.Font("Consolas", 9, System.Drawing.FontStyle.Bold);
+                    using var fontTitulo = new System.Drawing.Font("Consolas", 10, System.Drawing.FontStyle.Bold);
+                    using var fontNormal = new System.Drawing.Font("Consolas", 9, System.Drawing.FontStyle.Regular);
 
-                    var format = new StringFormat
+                    float yPos = 5;
+                    float leftMargin = 10;
+
+                    var linhas = ticketTexto.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                    foreach (var linha in linhas)
                     {
-                        Alignment = StringAlignment.Center,
-                        LineAlignment = StringAlignment.Near
-                    };
-
-                    var area = new RectangleF(0, 0, largura, altura);
-
-                    // Desenha o ticket
-                    e.Graphics.DrawString(ticketTexto, font, Brushes.Black, area, format);
+                        if (linha.Contains("===") || linha.Contains("NEXTBALA") || linha.Contains("PEDIDO"))
+                        {
+                            e.Graphics.DrawString(linha, fontTitulo, Brushes.Black, leftMargin, yPos);
+                        }
+                        else
+                        {
+                            e.Graphics.DrawString(linha, fontNormal, Brushes.Black, leftMargin, yPos);
+                        }
+                        yPos += 15;
+                    }
 
                     copiaAtual++;
                     e.HasMorePages = copiaAtual < copias;
@@ -274,10 +660,12 @@ namespace NextBala.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erro ao imprimir ticket: {ex.Message}", "Erro",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Erro ao imprimir ticket: {ex.Message}\n\nVerifique se a impressora está configurada corretamente.",
+                    "Erro de Impressão", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        // ========== IMPLEMENTAÇÃO DE INotifyPropertyChanged ==========
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string propName = "")
@@ -285,7 +673,8 @@ namespace NextBala.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        // Implementar IDisposable para limpar o timer
+        // ========== IMPLEMENTAÇÃO DE IDisposable ==========
+
         public void Dispose()
         {
             _timer?.Stop();
