@@ -403,7 +403,7 @@
                                         <TextBox Text="{Binding Ticket}"
                                                  AcceptsReturn="True"
                                                  IsReadOnly="True"
-                                                 Height="90"
+                                                 Height="120"
                                                  Background="#F5F7FA"
                                                  BorderThickness="0"
                                                  Padding="6"

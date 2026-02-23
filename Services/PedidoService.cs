@@ -388,25 +388,25 @@ namespace NextBala.Services
             {
                 var sb = new StringBuilder();
 
-                sb.AppendLine("====== TICKET ======");
-                sb.AppendLine($"Pedido Nº: {pedido.NumeroPedido}");
-                sb.AppendLine($"Cliente: {pedido.Cliente?.Nome}");
-                sb.AppendLine($"Telefone: {pedido.Cliente?.Telefone}");
-                sb.AppendLine($"Data: {pedido.Data:dd/MM/yyyy}");
+                sb.AppendLine("                         ****** TICKET ******");
+                sb.AppendLine($"                    Pedido Nº: {pedido.NumeroPedido}");
+                sb.AppendLine($"                    Cliente: {pedido.Cliente?.Nome}");
+                sb.AppendLine($"                    Telefone: {pedido.Cliente?.Telefone}");
+                sb.AppendLine($"                    Data: {pedido.Data:dd/MM/yyyy}");
 
                 // Adicionar informações dos itens com técnico
                 if (pedido.Itens != null && pedido.Itens.Any())
                 {
                     foreach (var item in pedido.Itens)
                     {
-                        sb.AppendLine($"Técnico: {item.Tecnico ?? "Não atribuído"}");
+                        sb.AppendLine($"                    Técnico: {item.Tecnico ?? "Não atribuído"}");
                     }
                 }
                 else
                 {
                     sb.AppendLine("Nenhum item no pedido");
                 }
-                sb.AppendLine("=== BALANGOLA ===");
+                sb.AppendLine("                    === BALANGOLA ===");
 
                 return sb.ToString();
             }

@@ -430,12 +430,50 @@ namespace NextBala.ViewModels
             Tecnico = string.Empty;
             Preco = string.Empty;
 
-            if (PedidoAtual.Id > 0)
-            {
-                Ticket = _service.GerarTicket(PedidoAtual);
-            }
+            // Gerar ticket preview após adicionar item
+            Ticket = GerarPreviewTicket();
         }
 
+        private string GerarPreviewTicket()
+        {
+            if (Itens.Count == 0)
+                return string.Empty;
+
+            var ticket = new System.Text.StringBuilder();
+
+            ticket.AppendLine("====== TICKET ======");
+
+            // Se for um pedido já salvo, usa o número do pedido
+            if (PedidoAtual?.NumeroPedido > 0)
+            {
+                ticket.AppendLine($"Pedido Nº: {PedidoAtual.NumeroPedido}");
+            }
+            else
+            {
+                ticket.AppendLine("Pedido Nº: (Novo)");
+            }
+
+            ticket.AppendLine($"Cliente: {ClienteNome}");
+            ticket.AppendLine($"Telefone: {ClienteTelefone}");
+            ticket.AppendLine($"Data: {DateTime.Now:dd/MM/yyyy}");
+
+            // Adicionar informações dos itens com técnico
+            if (Itens != null && Itens.Any())
+            {
+                foreach (var item in Itens)
+                {
+                    ticket.AppendLine($"Técnico: {item.Tecnico ?? "Não atribuído"}");
+                }
+            }
+            else
+            {
+                ticket.AppendLine("Nenhum item no pedido");
+            }
+
+            ticket.AppendLine("=== BALANGOLA ===");
+
+            return ticket.ToString();
+        }
         private int ObterProximoNumeroPedido()
         {
             var hoje = DateTime.Today;
@@ -655,11 +693,11 @@ namespace NextBala.ViewModels
 
                 pd.PrintPage += (sender, e) =>
                 {
-                    using var font = new System.Drawing.Font("Consolas", 9, System.Drawing.FontStyle.Bold);
+                    using var font = new System.Drawing.Font("Segoe UI", 8, System.Drawing.FontStyle.Bold);
 
                     var format = new StringFormat
                     {
-                        Alignment = StringAlignment.Center,
+                        Alignment = StringAlignment.Near,
                         LineAlignment = StringAlignment.Near
                     };
 
